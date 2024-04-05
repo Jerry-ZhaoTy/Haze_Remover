@@ -1,41 +1,56 @@
-from flask import Flask, render_template, request, redirect, url_for
-import os
-from werkzeug.utils import secure_filename
+from flask import Flask, request, render_template, redirect, url_for
+import base64
+from dehaze import Recover, AtmLight, DarkChannel, TransmissionEstimate, TransmissionRefine  # Import your dehaze functions here
+import cv2
+import numpy as np
 
 app = Flask(__name__)
 
-# Specify the folder to save uploaded files
-UPLOAD_FOLDER = 'uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Ensure the upload folder exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Allowed file extensions
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def index():
-    # Handle file upload
-    if request.method == 'POST':
-        # Check if the post request has the file part
-        if 'image' not in request.files:
-            return redirect(request.url)
-        file = request.files['image']
-        # If the user does not select a file, the browser submits an
-        # empty file without a filename.
-        if file.filename == '':
-            return redirect(request.url)
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            # Redirect to a new URL, or you can simply display a message
-            return redirect(url_for('index'))
     return render_template('index.html')
+
+def process_image_for_dehaze(image_file):
+    # Read the image in OpenCV
+    filestr = image_file.read()
+    npimg = np.fromstring(filestr, np.uint8)
+    img = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
+
+    # Dehaze the image
+    I = img.astype('float64') / 255
+    dark = DarkChannel(I, 15)
+    A = AtmLight(I, dark)
+    te = TransmissionEstimate(I, A, 15)
+    t = TransmissionRefine(img, te)
+    J = Recover(I, t, A, 0.1)
+
+    # Convert the processed image to base64 for embedding in HTML
+    _, im_arr = cv2.imencode('.png', J * 255)  # im_arr: image in Numpy one-dimension array format.
+    im_bytes = im_arr.tobytes()
+    im_b64 = base64.b64encode(im_bytes).decode("utf-8")
+
+    return im_b64
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    file = request.files.get('file')
+    if file:
+        image_data_uri = f"data:image/png;base64,{process_image_for_dehaze(file)}"
+        return f'''
+        <!doctype html>
+        <html lang="en">
+        <head>
+            <title>Dehazed Image</title>
+        </head>
+        <body>
+            <h1>Dehazed Image</h1>
+            <img src="{image_data_uri}">
+            <br>
+            <a href="/">Upload another image</a>
+        </body>
+        </html>
+        '''
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)
