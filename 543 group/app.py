@@ -9,6 +9,9 @@ from dehaze import Recover, AtmLight, DarkChannel, TransmissionEstimate, Transmi
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
+
 @app.route('/')
 def index():
     return render_template('index.html')  # Assumes an index.html file with upload form
