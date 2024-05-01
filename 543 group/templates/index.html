@@ -2,15 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Haze Remover</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
+        }
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+        input[type="submit"] {
+            cursor: pointer;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
     <h1>Haze Remover</h1>
     <form action="/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="file">
+        <label for="fileUpload">Choose an image or video to dehaze:</label>
+        <input type="file" id="fileUpload" name="file" accept="image/*,video/*">
         <input type="submit" value="Upload">
     </form>
 </body>
