@@ -41,5 +41,11 @@
         <input type="file" id="fileUpload" name="file" accept="image/*,video/*">
         <input type="submit" value="Upload">
     </form>
+
+    <h2>Upload Image for Object Detection</h2>
+    <form action="/upload_to_eval" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Upload Image">
+    </form>
 </body>
 </html>
