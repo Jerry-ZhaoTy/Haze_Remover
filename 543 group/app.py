@@ -5,12 +5,15 @@ import numpy as np
 import base64
 from werkzeug.utils import secure_filename
 from dehaze import Recover, AtmLight, DarkChannel, TransmissionEstimate, TransmissionRefine
+from objDetection import upload_and_detect
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
+
+upload_and_detect(app)
 
 @app.route('/')
 def index():
