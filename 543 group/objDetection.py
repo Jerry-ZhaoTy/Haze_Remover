@@ -1,4 +1,6 @@
 # objDetection.py
+# Since weights file is larger than 100MB, please download the file through the link and put it under the file '543 group'
+# (path same as other py files). https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights
 import cv2
 import os
 import numpy as np
