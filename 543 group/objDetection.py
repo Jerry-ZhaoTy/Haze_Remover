@@ -1,5 +1,5 @@
 # objDetection.py
-# Since weights file is larger than 100MB, please download the file through the link and put it under the file '543 group'
+# Since the weights file is larger than 100MB, please download the file through the link and put it under the file '543 group'
 # (path same as other py files). https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights
 import cv2
 import os
@@ -43,6 +43,8 @@ def detect_objs(file_path):
                 class_ids.append(class_id)
 
     indices = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
+    if isinstance(indices, tuple):
+        indices = np.array([])
     for i in indices.flatten():
         box = boxes[i]
         x, y, w, h = box
