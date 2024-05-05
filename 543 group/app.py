@@ -6,6 +6,7 @@ import base64
 from werkzeug.utils import secure_filename
 from dehaze import Recover, AtmLight, DarkChannel, TransmissionEstimate, TransmissionRefine
 from objDetection import upload_and_detect
+from haze_adder import process_image as add_haze
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
@@ -19,8 +20,8 @@ upload_and_detect(app)
 def index():
     return render_template('index.html')  # Assumes an index.html file with upload form
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
+@app.route('/dehaze', methods=['POST'])
+def haze_remover():
     file = request.files['file']
     if file: 
         filename = secure_filename(file.filename)
@@ -39,7 +40,7 @@ def upload_file():
             <body>
                 <h1>Processed Video</h1>
                 <video width="320" height="240" controls>
-                  <source src="{url_for('download_file', filename=os.path.basename(output_path))}" type="video/mp4">
+                  <source src="{url_for('uploaded_file', filename=os.path.basename(output_path))}" type="video/mp4">
                   Your browser does not support the video tag.
                 </video>
                 <br>
@@ -64,10 +65,6 @@ def upload_file():
             </html>
             '''
     return redirect(url_for('index'))
-
-@app.route('/uploads/<filename>')
-def download_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=False)
 
 def process_image_for_dehaze(file_path):
     with open(file_path, 'rb') as image_file:
@@ -120,6 +117,42 @@ def process_frame(frame):
     t = TransmissionRefine(frame, te)
     J = Recover(I, t, A, 0.1)
     return (J * 255).astype(np.uint8)
+
+@app.route('/haze', methods=['POST'])
+def haze_adder():
+    file = request.files['file']    
+    if file:
+        filename = secure_filename(file.filename)
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(image_path)
+
+        # Process the image to add haze and create a depth map
+        add_haze(image_path)
+
+        hazy_image_path = image_path[:-4] + '_hazy' + image_path[-4:]
+        depth_map_path = image_path[:-4] + '_depth_map' + image_path[-4:]
+
+        # Display images directly
+        return f"""
+        <!doctype html>
+        <html lang="en">
+        <head>
+            <title>Hazed Image and Depth Map</title>
+        </head>
+        <body>
+            <h2>Hazed Image and Its Corresponding Depth Map</h2>
+            <img src="{url_for('uploaded_file', filename=os.path.basename(hazy_image_path))}" alt="Hazed Image">
+            <img src="{url_for('uploaded_file', filename=os.path.basename(depth_map_path))}" alt="Depth Map">
+            <br>
+            <a href="/">Upload another image</a>
+        </body>
+        </html>
+        """
+    return redirect(url_for('index'))
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=False)
 
 if __name__ == '__main__':
     app.run(debug=True)
