@@ -64,7 +64,7 @@ def process_image(image_path):
     cv2.imwrite(depth_map_path, depth_image)  # Save depth map image
 
 # Process an image
-process_image('j.png')
+# process_image('j.png')
 
 
 
